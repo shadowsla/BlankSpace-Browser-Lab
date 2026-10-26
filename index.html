@@ -1,1 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="An interactive educational lab for learning how browser tabs, about:blank, Blob URLs, and iframes work.">
+  <title>BlankSpace — Browser Lab</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1020;
+      --panel: #141c31;
+      --panel-2: #1b2742;
+      --text: #f4f7ff;
+      --muted: #a9b6d0;
+      --line: #30405f;
+      --blue: #7c9cff;
+      --pink: #ff718d;
+      --mint: #6fe3c1;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; color: var(--text);
+      background: radial-gradient(ellipse at top, #1c2850 0%, var(--bg) 55%);
+      font: 16px/1.6 system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    .wrap { width: min(1080px, calc(100% - 32px)); margin: 0 auto; padding: 32px 0 56px; }
+    header { display: flex; align-items: center; gap: 14px; margin-bottom: 34px; }
+    .logo {
+      width: 48px; height: 48px; display: grid; place-items: center;
+      border-radius: 15px; background: linear-gradient(135deg, var(--blue), #a58bff);
+      color: #10152b; font-size: 25px; font-weight: 900;
+    }
+    .eyebrow { color: var(--mint); text-transform: uppercase; letter-spacing: .16em; font-size: .75rem; font-weight: 800; }
+    h1 { margin: 0; font-size: clamp(2rem, 5vw, 3.4rem); line-height: 1.1; letter-spacing: -.04em; }
+    h2 { margin: 0 0 8px; font-size: 1.25rem; }
+    p { margin: 8px 0 0; }
+    .muted { color: var(--muted); }
+    .hero { max-width: 760px; margin-bottom: 28px; }
+    .hero p { max-width: 700px; font-size: 1.08rem; color: var(--muted); }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+    .card {
+      min-width: 0; padding: 24px; border: 1px solid var(--line); border-radius: 20px;
+      background: linear-gradient(160deg, rgba(27,39,66,.96), rgba(20,28,49,.96));
+      box-shadow: 0 14px 40px rgba(0,0,0,.18);
+    }
+    .wide { grid-column: 1 / -1; }
+    .tag { display: inline-block; padding: 4px 9px; border-radius: 999px; font-size: .75rem; font-weight: 800; color: var(--mint); background: #143c3b; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+    button, .button {
+      border: 0; border-radius: 11px; padding: 11px 15px; cursor: pointer;
+      font: inherit; font-weight: 750; text-decoration: none; display: inline-flex;
+      align-items: center; justify-content: center; gap: 8px;
+      background: var(--blue); color: #10152b; transition: transform .15s, filter .15s;
+    }
+    button:hover, .button:hover { transform: translateY(-1px); filter: brightness(1.08); }
+    button.secondary { background: #2a3858; color: var(--text); border: 1px solid #405276; }
+    button.accent { background: var(--pink); color: #24101a; }
+    button:focus-visible, a:focus-visible, textarea:focus-visible { outline: 3px solid var(--mint); outline-offset: 3px; }
+    textarea, input {
+      width: 100%; margin-top: 10px; padding: 13px 14px; border-radius: 11px;
+      border: 1px solid #405276; background: #0c1325; color: var(--text); font: inherit;
+    }
+    textarea { min-height: 150px; resize: vertical; }
+    .status { min-height: 1.5em; margin-top: 12px; color: var(--mint); font-size: .92rem; }
+    .demo-window {
+      margin-top: 16px; overflow: hidden; border: 1px solid #405276; border-radius: 13px; background: #0b1020;
+    }
+    .windowbar { display: flex; align-items: center; gap: 7px; padding: 10px 12px; background: #202c47; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; background: #ff718d; }
+    .dot:nth-child(2) { background: #ffd166; } .dot:nth-child(3) { background: #6fe3c1; }
+    .windowlabel { margin-left: 6px; color: var(--muted); font-size: .8rem; }
+    .preview { padding: 22px; min-height: 112px; }
+    code { color: #b9c8ff; background: #0b1328; padding: 2px 5px; border-radius: 5px; }
+    .lesson-list { display: grid; gap: 14px; margin-top: 16px; }
+    .lesson { display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: start; }
+    .num { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; background: #29385c; color: var(--blue); font-weight: 900; }
+    .note { padding: 13px 15px; border-left: 3px solid var(--mint); border-radius: 0 10px 10px 0; background: #102b31; color: #c9f8eb; margin-top: 16px; }
+    footer { padding-top: 26px; color: var(--muted); font-size: .88rem; }
+    @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } .wide { grid-column: auto; } .card { padding: 19px; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo" aria-hidden="true">B</div>
+      <div>
+        <div class="eyebrow">Interactive web learning</div>
+        <h1>BlankSpace <span style="color:var(--blue)">Browser Lab</span></h1>
+      </div>
+    </header>
 
+    <section class="hero">
+      <span class="tag">HTML · CSS · JavaScript</span>
+      <p>Explore how browsers create tabs and temporary documents. Try the demonstrations, inspect the results, and learn what each browser feature can—and cannot—do.</p>
+    </section>
+
+    <main class="grid">
+      <section class="card">
+        <h2>01 · About:blank</h2>
+        <p class="muted">Open a new blank tab and write a small, self-contained learning page into it. Your browser may block pop-ups unless you click the button directly.</p>
+        <div class="actions">
+          <button id="blankButton">Open blank-tab demo ↗</button>
+        </div>
+        <div class="status" id="blankStatus" role="status" aria-live="polite"></div>
+        <div class="demo-window">
+          <div class="windowbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="windowlabel">Concept: about:blank</span></div>
+          <div class="preview"><strong>A new document, not an invisibility mode.</strong><p class="muted">The tab and its activity can still be visible to the browser and extensions with appropriate permissions.</p></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>02 · Blob URL</h2>
+        <p class="muted">Create a temporary HTML document from a Blob, then open it in a new tab. Blob URLs are browser-managed references, not stealth links.</p>
+        <div class="actions">
+          <button class="accent" id="blobButton">Open Blob demo ↗</button>
+        </div>
+        <div class="status" id="blobStatus" role="status" aria-live="polite"></div>
+        <div class="demo-window">
+          <div class="windowbar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="windowlabel">Concept: blob:</span></div>
+          <div class="preview"><strong>Temporary content generated in JavaScript.</strong><p class="muted">The URL is associated with the page's browser context and can be revoked when no longer needed.</p></div>
+        </div>
+      </section>
+
+      <section class="card wide">
+        <h2>03 · Notes workspace</h2>
+        <p class="muted">Write notes and download them as a plain-text file. This demo does not send your notes to a server.</p>
+        <label for="notes">Your notes</label>
+        <textarea id="notes" placeholder="Write a few things you learned about browser tabs..."></textarea>
+        <div class="actions">
+          <button id="downloadNotes">Download notes</button>
+          <button class="secondary" id="clearNotes">Clear notes</button>
+        </div>
+        <div class="status" id="notesStatus" role="status" aria-live="polite"></div>
+      </section>
+
+      <section class="card wide">
+        <h2>04 · Learn the browser concepts</h2>
+        <div class="lesson-list">
+          <div class="lesson"><div class="num">1</div><div><strong><code>window.open()</code></strong><p class="muted">Requests a new browsing context. It can return <code>null</code> when a pop-up is blocked, so check the result.</p></div></div>
+          <div class="lesson"><div class="num">2</div><div><strong><code>about:blank</code></strong><p class="muted">A built-in blank document. JavaScript can write content into a newly opened blank page when browser rules permit it.</p></div></div>
+          <div class="lesson"><div class="num">3</div><div><strong>Blob URLs</strong><p class="muted">A browser-created URL that points to data such as generated HTML. It is not the same as hosting a public website.</p></div></div>
+          <div class="lesson"><div class="num">4</div><div><strong>iframes and sandboxing</strong><p class="muted">An iframe embeds another page. A sandbox restricts capabilities, but combining <code>allow-scripts</code> and <code>allow-same-origin</code> can weaken protections for same-origin content. External sites may also block embedding.</p></div></div>
+          <div class="lesson"><div class="num">5</div><div><strong>Frame-busting code</strong><p class="muted">Checking <code>window.top === window.self</code> detects whether a page is framed in many ordinary cases. It does not hide a tab from extensions or make a page undetectable.</p></div></div>
+        </div>
+        <div class="note"><strong>Remember:</strong> A page title, educational label, blank URL, or Blob URL does not prevent browser management software from observing a tab. Use school-managed tools according to your school's rules.</div>
+      </section>
+    </main>
+
+    <footer>
+      BlankSpace Browser Lab · A learning project for GitHub Pages. Pop-up behavior and iframe permissions depend on the browser and the destination website.
+    </footer>
+  </div>
+
+  <script>
+    "use strict";
+
+    function demoDocument(method) {
+      const title = method === "blob" ? "Blob URL Learning Demo" : "About:blank Learning Demo";
+      return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${title}</title>
+<style>
+  body { margin:0; padding:36px; font:16px/1.6 system-ui,sans-serif; color:#f4f7ff;
+    background:#0b1020; }
+  main { max-width:680px; margin:auto; padding:26px; border:1px solid #30405f;
+    border-radius:18px; background:#141c31; }
+  h1 { color:#9eb4ff; }
+  p { color:#b8c5dd; }
+  code { color:#b9c8ff; }
+</style>
+</head>
+<body>
+<main>
+  <h1>${title}</h1>
+  <p>This small page was created locally by the BlankSpace Browser Lab demonstration.</p>
+  <p>It demonstrates document creation; it does not conceal this tab from the browser or extensions.</p>
+  <p>Method: <code>${method === "blob" ? "Blob URL" : "about:blank + document.write"}</code></p>
+</main>
+</body>
+</html>`;
+    }
+
+    document.getElementById("blankButton").addEventListener("click", () => {
+      const child = window.open("about:blank", "_blank");
+      const status = document.getElementById("blankStatus");
+      if (!child) {
+        status.textContent = "The browser blocked the pop-up. Check your browser's pop-up settings if this demo is permitted.";
+        return;
+      }
+      try {
+        child.document.open();
+        child.document.write(demoDocument("blank"));
+        child.document.close();
+        status.textContent = "Blank-tab demonstration opened.";
+      } catch (error) {
+        status.textContent = "The browser did not allow the demo document to be written.";
+      }
+    });
+
+    document.getElementById("blobButton").addEventListener("click", () => {
+      const blob = new Blob([demoDocument("blob")], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const child = window.open(url, "_blank");
+      const status = document.getElementById("blobStatus");
+      if (!child) {
+        URL.revokeObjectURL(url);
+        status.textContent = "The browser blocked the pop-up. Check your browser's pop-up settings if this demo is permitted.";
+        return;
+      }
+      status.textContent = "Blob demonstration opened. The temporary URL is managed by this browser session.";
+      // Revoke after a delay so the newly opened document has time to load.
+      window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+    });
+
+    const notes = document.getElementById("notes");
+    document.getElementById("downloadNotes").addEventListener("click", () => {
+      const blob = new Blob([notes.value], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "blankspace-study-notes.txt";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      document.getElementById("notesStatus").textContent = "Download requested.";
+    });
+
+    document.getElementById("clearNotes").addEventListener("click", () => {
+      if (window.confirm("Clear the notes in this workspace?")) {
+        notes.value = "";
+        document.getElementById("notesStatus").textContent = "Notes cleared.";
+      }
+    });
+  </script>
+</body>
+</html>
